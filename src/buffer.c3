@@ -90,28 +90,23 @@ fn void Buffer.open_file(&self, String filepath)
 // append_file doesn't change the filepath unless it's empty
 fn void Buffer.append_file(&self, String filepath)
 {
-	if (!*self) *self = new();
 	self.insert_file(self.len(), filepath);
 }
 
 // insert at index, or at eof
 fn void Buffer.insert_file(&self, usz index, String filepath)
 {
-	if (!*self) *self = new();
+	if (!filepath) return;
+	usz file_len = file::get_size(filepath) ?? 0;
+	self.reserve(file_len);
 	BufferData* data = self.data();
 	if (data.filepath.len == 0) data.filepath = filepath;
-
-	usz file_len = file::get_size(filepath) ?? 0;
 	if (file_len == 0) return;
-
-	self.reserve(file_len);
-	data = self.data();
 	usz len = data.len;
 	index = min(index, len);
 	char* start = data.chars[index:file_len].ptr; // area to insert into
 	mem::move(start + file_len, start, len - index); // move existing data
 	data.len += file::load_buffer(filepath, data.chars[index:file_len]).len ?? 0;
-	
 }
 
 //+ TODO: ? object should allocate a new string for filepath, and free it each
@@ -259,29 +254,12 @@ macro void Buffer.append(&self, value)
 
 fn void Buffer.append_chars(&self, String str)
 {
-	usz other_len = str.len;
-	if (!other_len) return;
-	if (!*self)
-	{
-		*self = new();
-		self.append(str);
-		return;
-	}
-	self.reserve(other_len);
-	BufferData* data = self.data();
-	mem::copy(&data.chars[data.len], str.ptr, other_len);
-	data.len += other_len;
+	self.insert_chars(self.len(), str);
 }
 
 fn void Buffer.append_char(&self, char c)
 {
-	if (!*self)
-	{
-		*self = new();
-	}
-	self.reserve(1);
-	BufferData* data = self.data();
-	data.chars[data.len++] = c;
+	self.insert_char(self.len(), c);
 }
 
 fn void Buffer.append_string(&self, DString str)
@@ -295,13 +273,7 @@ fn void Buffer.append_string(&self, DString str)
 *>
 fn usz Buffer.append_char32(&self, Char32 c)
 {
-	char[4] buffer @noinit;
-	char* p = &buffer;
-	usz n = conv::char32_to_utf8_unsafe(c, &p);
-	self.reserve(n);
-	BufferData* data = self.data();
-	data.chars[data.len:n] = buffer[:n];
-	data.len += n;
+	usz n = self.insert_char32(self.len(), c);
 	return n;
 }
 
@@ -324,14 +296,8 @@ fn usz! Buffer.appendf(&self, String format, args...) @maydiscard
 
 fn usz Buffer.append_utf32(&self, Char32[] chars)
 {
-	self.reserve(chars.len);
-	usz end = self.len();
-	foreach (Char32 c : chars)
-	{
-		self.append_char32(c);
-	}
-	return self.data().len - end;
-
+	usz n = self.append_utf32(chars);
+	return n;
 }
 
 fn void Buffer.append_repeat(&self, char c, usz times)
@@ -343,7 +309,6 @@ fn void Buffer.append_repeat(&self, char c, usz times)
 	{
 		data.chars[data.len++] = c;
 	}
-
 }
 
 
@@ -429,6 +394,7 @@ macro void Buffer.insert(&self, usz index, value)
 fn void Buffer.insert_chars(&self, usz index, String s)
 {
 	if (s.len == 0) return;
+	if (!*self) *self = new();
 	self.reserve(s.len);
 	BufferData* data = self.data();
 	usz len = self.len();

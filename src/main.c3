@@ -29,6 +29,9 @@ fn int main(String[] args)
 	
 	io::printfn("len = %d", buf2.len());
 	io::printn(buf2.str_view());
+
+	buf.append_chars("appending some chars");
+	io::printn(buf.str_view());
 	buf.free();
 	buf2.free();
 	return 0;
