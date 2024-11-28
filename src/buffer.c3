@@ -9,6 +9,13 @@ distinct Buffer (OutStream) = void*;
 const usz MIN_CAPACITY @private = 16;
 const usz DEFAULT_CAPACITY @private = 4096;
 
+fault BufferError
+{
+	NULL_BUFFER,
+	NO_FILENAME,
+	SAVE_FAILED,
+}
+
 struct BufferData @private
 {
 	Allocator allocator;
@@ -22,7 +29,11 @@ struct BufferData @private
 //+ Init/Memory methods =======================================================
 
 <*
+ Allocate memory for a new Buffer object. Panics if allocation fails
  @require !self.data() "Buffer already initialized"
+ @param capacity `desired capacity for buffer, default = DEFAULT_CAPACITY`
+ @param allocator `the allocator to use`
+ @return `the allocated Buffer object`
 *>
 fn Buffer Buffer.new_init(&self, usz capacity = DEFAULT_CAPACITY, Allocator allocator = allocator::heap())
 {
@@ -105,24 +116,20 @@ fn void Buffer.insert_file(&self, usz index, String filepath)
 	if (file_len == 0) return;
 	usz len = data.len;
 	index = min(index, len);
-	char* start = data.chars[index:file_len].ptr; // area to insert into
-	mem::move(start + file_len, start, len - index); // move existing data
+	self.adjust_for_insert (index, file_len);
 	data.len += file::load_buffer(filepath, data.chars[index:file_len]).len ?? 0;
 }
 
-//+ TODO: ? object should allocate a new string for filepath, and free it each
-//			time it is changed and during final free. ?
 fn void Buffer.free(&self)
 {
 	if (!*self) return;
 	BufferData* data = self.data();
 	if (!data) return;
-	//- TODO: if there is a filename string, free it
 	allocator::free(data.allocator, data);
 	*self = (Buffer)null;
 }
 
-fn void Buffer.reserve(&self, usz addition)
+fn void Buffer.reserve(&self, usz addition) @private
 {
 	BufferData* data = self.data();
 	if (!data)
@@ -142,24 +149,20 @@ fn void Buffer.reserve(&self, usz addition)
 //+ File saving methods =======================================================
 
 //- TODO: save should return an error if there is an empty string for filepath
-fn usz Buffer.save(&self)
+fn void! Buffer.save(&self)
 {
-	usz bytes_written;
 	BufferData* data = self.data();
-	if (data.filepath.len > 0 && data.len > 0)
-	{
-		File file = file::open(data.filepath, "wb")!!;
-		defer (void)file.close();
-		bytes_written = file.write(data.chars[0:data.len]) ?? 0;
-	}
-	return bytes_written;
+	if (!data) return BufferError.NULL_BUFFER?;
+	if (data.filepath.len == 0) return BufferError.NO_FILENAME?;
+	if ( catch error = file::save(data.filepath, data.chars[0:data.len])) return BufferError.SAVE_FAILED?;
 }
 
-fn usz Buffer.save_as(&self, String filepath)
+fn void! Buffer.save_as(&self, String filepath)
 {
 	BufferData*data = self.data();
-	data.filepath = filepath; //- TODO: ? may require a string free here
-	return self.save();
+	if (!data) return BufferError.NULL_BUFFER?;
+	data.filepath = filepath;
+	self.save()!;
 }
 
 //+ Info/View/Maintenence methods =============================================
@@ -251,6 +254,11 @@ macro void Buffer.append(&self, value)
 					$error "Unsupported type for append – use appendf instead.";
 			$endswitch
 	$endswitch
+}
+
+macro void Buffer.append_buffer(&self, Buffer buffer)
+{
+	self.insert_buffer(self.len(), buffer);
 }
 
 macro void Buffer.append_chars(&self, String str)
@@ -387,6 +395,22 @@ macro void Buffer.insert(&self, usz index, value)
 	$endswitch
 }
 
+fn void Buffer.insert_buffer(&self, usz index, Buffer buffer)
+{
+	if (!buffer) return;
+	BufferData* data = buffer.data();
+	self.insert_chars( index, (String)data.chars[:data.len]);
+}
+
+fn void Buffer.adjust_for_insert(&self, usz index, usz len) @private
+{
+	// should make this a BufferData method?
+	BufferData* data = self.data();
+	if (index == data.len) return; // we are at EOF, nothing to move
+	char* start = &data.chars[index];
+	mem::move (start + len, start, self.len() - index);
+}
+
 <*
  @require index <= self.len()
 *>
@@ -397,30 +421,12 @@ fn void Buffer.insert_chars(&self, usz index, String s)
 	self.reserve(s.len);
 	BufferData* data = self.data();
 	usz len = self.len();
-	if (data.chars[:len].ptr == s.ptr)
-	{
-		// Source and destination are the same: nothing to do.
-		return;
-	}
+	if (data.chars[:len].ptr == s.ptr) return;
 	index = min(index, len);
 	data.len += s.len;
-
-	char* start = data.chars[index:s.len].ptr; // area to insert into
-	mem::move(start + s.len, start, len - index); // move existing data
-	switch
-	{
-		case s.ptr <= start && start < s.ptr + s.len:
-			// Overlapping areas.
-			foreach_r (i, c : s)
-			{
-				data.chars[index + i] = c;
-			}
-		case start <= s.ptr && s.ptr < start + len:
-			// Source has moved.
-			mem::move(start, s.ptr + s.len, s.len);
-		default:
-			mem::move(start, s, s.len);
-	}
+	self.adjust_for_insert(index, s.len);
+	char* start = data.chars[index:s.len].ptr;
+	mem::move(start, s, s.len);
 }
 
 <*
@@ -440,7 +446,7 @@ fn void Buffer.insert_char(&self, usz index, char c)
 	self.reserve(1);
 	BufferData* data = self.data();
 	char* start = &data.chars[index];
-	mem::move(start + 1, start, self.len() - index);
+	self.adjust_for_insert(index, 1);
 	data.chars[index] = c;
 	data.len++;
 }
@@ -453,15 +459,11 @@ fn usz Buffer.insert_char32(&self, usz index, Char32 c)
 	char[4] buffer @noinit;
 	char* p = &buffer;
 	usz n = conv::char32_to_utf8_unsafe(c, &p);
-
 	self.reserve(n);
 	BufferData* data = self.data();
-
-	char* start = &data.chars[index];
-	mem::move(start + n, start, self.len() - index);
+	self.adjust_for_insert (index, n);
 	data.chars[index:n] = buffer[:n];
 	data.len += n;
-
 	return n;
 }
 
@@ -471,15 +473,10 @@ fn usz Buffer.insert_char32(&self, usz index, Char32 c)
 fn usz Buffer.insert_utf32(&self, usz index, Char32[] chars)
 {
 	usz n = conv::utf8len_for_utf32(chars);
-	
 	self.reserve(n);
 	BufferData* data = self.data();
-
-	char* start = &data.chars[index];
-	mem::move(start + n, start, self.len() - index);
-
+	self.adjust_for_insert (index, n);
 	char[4] buffer @noinit;
-
 	foreach(c : chars)
 	{
 		char* p = &buffer;
@@ -487,9 +484,7 @@ fn usz Buffer.insert_utf32(&self, usz index, Char32[] chars)
 		data.chars[index:m] = buffer[:m];
 		index += m;
 	}
-
 	data.len += n;
-
 	return n;
 }
 
@@ -526,6 +521,17 @@ fn void Buffer.delete(&self, usz start, usz len = 1)
 fn void Buffer.delete_range(&self, usz start, usz end)
 {
 	self.delete(start, end - start + 1);
+}
+
+// replaces every instance of char ch with char replacement
+fn void Buffer.replace_chars(self, char ch, char replacement)
+{
+	BufferData* data = self.data();
+	if (!data) return;
+	foreach (&c : data.chars[:data.len])
+	{
+		if (*c == ch) *c = replacement;
+	}
 }
 
 //+ Copying ===================================================================
@@ -574,7 +580,12 @@ fn Char32[] Buffer.copy_utf32(&self, Allocator allocator = allocator::heap())
 
 // Comparing/Branching ========================================================
 
-fn bool Buffer.equals(self, Buffer other_buffer)
+macro bool Buffer.iequals(self, Buffer other_buffer)
+{
+	self.equals(other_buffer, false);
+}
+
+fn bool Buffer.equals(self, Buffer other_buffer, bool case_sensitive = true)
 {
 	BufferData *buf1 = self.data();
 	BufferData *buf2 = other_buffer.data();
@@ -585,7 +596,13 @@ fn bool Buffer.equals(self, Buffer other_buffer)
 	if (buf1_len != buf2.len) return false;
 	for (int i = 0; i < buf1_len; i++)
 	{
-		if (buf1.chars[i] != buf2.chars[i]) return false;
+		if (case_sensitive)
+		{
+			if (buf1.chars[i] != buf2.chars[i]) return false;
+		} else
+		{
+			if ( buf1.chars[i].to_lower() != buf2.chars[i].to_lower() ) return false;
+		}
 	}
 	return true;
 }

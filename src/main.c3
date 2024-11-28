@@ -25,13 +25,15 @@ fn int main(String[] args)
 	buf2.append_file("test.txt");
 	buf2.append_file("test.txt");
 	buf2.insert_file(30, "test3.txt");
-	buf2.save_as("test2.txt");
+	buf2.save_as("test2.txt")!!;
 	
 	io::printfn("len = %d", buf2.len());
+	buf2.replace_chars('7', '#');
 	io::printn(buf2.str_view());
 
-	buf.append_chars("appending some chars");
+	buf.append_chars("^appending some chars");
 	buf.append('*');
+	buf.append_buffer(buf2);
 	io::printn(buf.str_view());
 	buf.free();
 	buf2.free();

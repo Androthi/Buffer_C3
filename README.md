@@ -20,6 +20,8 @@
 * append_char32
 * append_utf32
 * append_string
+* append_buffer
+* iequals
 
 ## implemented methods
 
@@ -46,6 +48,7 @@
 * write
 * write_byte
 * read_from_stream
+* insert_buffer
 * insert_file
 * insert_char
 * insert_chars
@@ -61,3 +64,4 @@
 * copy_utf32
 * equals
 * less
+* replace_chars
