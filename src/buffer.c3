@@ -88,7 +88,8 @@ fn void Buffer.open_file(&self, String filepath)
 }
 
 // append_file doesn't change the filepath unless it's empty
-fn void Buffer.append_file(&self, String filepath)
+
+macro void Buffer.append_file(&self, String filepath)
 {
 	self.insert_file(self.len(), filepath);
 }
@@ -233,45 +234,44 @@ macro void Buffer.append(&self, value)
 	$switch ($Type)
 		$case char:
 		$case ichar:
-			self.append_char(value);
+			self.insert_char(self.len(), value);
 		$case DString:
 			self.append_string(value);
 		$case String:
-			self.append_chars(value);
+			self.insert_chars(self.len(), value);
 		$case Char32:
-			self.append_char32(value);
+			self.insert_char32(self.len(), value);
 		$default:
 			$switch
 				$case $defined((Char32)value):
-					self.append_char32((Char32)value);
+					self.insert_char32(self.len(), (Char32)value);
 				$case $defined((String)value):
-					self.append_chars((String)value);
+					self.insert_chars(self.len(), (String)value);
 				$default:
 					$error "Unsupported type for append – use appendf instead.";
 			$endswitch
 	$endswitch
 }
 
-fn void Buffer.append_chars(&self, String str)
+macro void Buffer.append_chars(&self, String str)
 {
 	self.insert_chars(self.len(), str);
 }
 
-fn void Buffer.append_char(&self, char c)
+macro void Buffer.append_char(&self, char c)
 {
 	self.insert_char(self.len(), c);
 }
 
-fn void Buffer.append_string(&self, DString str)
+macro void Buffer.append_string(&self, DString str)
 {
-	if (!str) return;
-	self.append(str.str_view());
+	self.insert_string(self.len(), str);
 }
 
 <*
  @require c <= 0x10ffff
 *>
-fn usz Buffer.append_char32(&self, Char32 c)
+macro usz Buffer.append_char32(&self, Char32 c)
 {
 	usz n = self.insert_char32(self.len(), c);
 	return n;
@@ -294,7 +294,7 @@ fn usz! Buffer.appendf(&self, String format, args...) @maydiscard
 	};
 }
 
-fn usz Buffer.append_utf32(&self, Char32[] chars)
+macro usz Buffer.append_utf32(&self, Char32[] chars)
 {
 	usz n = self.append_utf32(chars);
 	return n;
@@ -310,7 +310,6 @@ fn void Buffer.append_repeat(&self, char c, usz times)
 		data.chars[data.len++] = c;
 	}
 }
-
 
 //- NOTE: maybe ? insert methods will eventually use cursor as insertion index ?
 
@@ -430,7 +429,7 @@ fn void Buffer.insert_chars(&self, usz index, String s)
 fn void Buffer.insert_string(&self, usz index, DString str)
 {
 	if (!str) return;
-	self.insert(index, str.str_view());
+	self.insert_chars(index, str.str_view());
 }
 
 <*
@@ -440,7 +439,6 @@ fn void Buffer.insert_char(&self, usz index, char c)
 {
 	self.reserve(1);
 	BufferData* data = self.data();
-
 	char* start = &data.chars[index];
 	mem::move(start + 1, start, self.len() - index);
 	data.chars[index] = c;

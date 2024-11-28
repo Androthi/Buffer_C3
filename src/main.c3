@@ -31,6 +31,7 @@ fn int main(String[] args)
 	io::printn(buf2.str_view());
 
 	buf.append_chars("appending some chars");
+	buf.append('*');
 	io::printn(buf.str_view());
 	buf.free();
 	buf2.free();

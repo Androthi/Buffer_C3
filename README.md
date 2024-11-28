@@ -14,7 +14,13 @@
 
 * append
 * insert
-  
+* append_file
+* append_char
+* append_chars
+* append_char32
+* append_utf32
+* append_string
+
 ## implemented methods
 
 * new_init
@@ -35,13 +41,7 @@
 * chop
 * set
 * free
-* append_file
-* append_char
-* append_chars
-* append_string
-* append_char32
 * appendf
-* append_utf32
 * append_repeat
 * write
 * write_byte
