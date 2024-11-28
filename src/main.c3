@@ -4,36 +4,23 @@ import std::io;
 
 fn int main(String[] args)
 {
-	DString str = dstring::new("Hello World");
 	
-	io::printn("Hello, World!");
 	Buffer buf = buffer::new();
-	io::printn( buf.capacity());
-	buf.append("COG");
-	io::printn( buf.str_view());
-	buf.set(1, 'A');
-	io::printn( buf.str_view());
-	buf.append( str );
-	io::printn(buf.str_view());
-
-	buf.clear();
-
-	buf.appendf("Hello in %s", str);
-	io::printn(buf.str_view());
 
 	Buffer buf2 = buffer::new_file("test.txt");
+	buf2.append("\n==============================\n");
 	buf2.append_file("test.txt");
-	buf2.append_file("test.txt");
-	buf2.insert_file(30, "test3.txt");
+	//buf2.insert_file(30, "test3.txt");
 	buf2.save_as("test2.txt")!!;
 	
-	io::printfn("len = %d", buf2.len());
-	buf2.replace_chars('7', '#');
-	io::printn(buf2.str_view());
+	//io::printfn("len = %d", buf2.len());
+	//buf2.replace_chars('7', '#');
 
-	buf.append_chars("^appending some chars");
-	buf.append('*');
+	//buf.append_chars("^appending some chars");
+	//buf.append('*');
 	buf.append_buffer(buf2);
+	//buf.insertf(124, "\n[[insertf string @124]]");
+	buf.insertf(30, "@%d@", 6666);
 	io::printn(buf.str_view());
 	buf.free();
 	buf2.free();

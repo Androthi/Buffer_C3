@@ -30,6 +30,7 @@
 * open_file
 * free
 * reserve
+* adjust_for_insert
 * save
 * save_as
 * data
@@ -48,6 +49,7 @@
 * write
 * write_byte
 * read_from_stream
+* insertf
 * insert_buffer
 * insert_file
 * insert_char

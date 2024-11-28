@@ -1,7 +1,7 @@
 module buffer;
 import std::io;
-import std::io::path;
 import std::io::file;
+import std::core::string;
 
 distinct Buffer (OutStream) = void*;
 //distinct Buffer = void*;
@@ -285,20 +285,23 @@ macro usz Buffer.append_char32(&self, Char32 c)
 	return n;
 }
 
-fn void! out_string_append_fn(void* data, char c) @private
-{
-	Buffer* s = data;
-	s.append_char(c);
-}
-
-fn usz! Buffer.appendf(&self, String format, args...) @maydiscard
+fn void Buffer.appendf(&self, String format, args...)
 {
 	if (!self.data()) self.new_init(format.len + 20);
 	@pool(self.data().allocator)
 	{
-		Formatter formatter;
-		formatter.init(&out_string_append_fn, self);
-		return formatter.vprintf(format, args);
+		String str = string::tformat(format, ...args);
+		self.append_chars(str);
+	};
+}
+
+fn void Buffer.insertf(&self, usz index, String format, args...)
+{
+	if (!self.data()) self.new_init(format.len + 20);
+	@pool(self.data().allocator)
+	{
+		String str = string::tformat(format, ...args);
+		self.insert_chars(index, str);
 	};
 }
 
