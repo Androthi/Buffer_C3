@@ -68,3 +68,6 @@
 * less
 * replace_chars
 * sub_buffer
+* new_sub_buffer
+* sub_string
+* new_sub_string

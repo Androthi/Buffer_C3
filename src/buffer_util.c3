@@ -46,7 +46,7 @@ fn void Buffer.replace_chars(self, char ch, char replacement)
 	}
 }
 
-fn void! Buffer.sub_buffer(self, usz start_index, usz len, Buffer dest)
+fn void! Buffer.sub_buffer(self, usz start_index, usz len, Buffer* dest)
 {
 	BufferData* data = self.data();
 	if (len == 0) return BufferError.OPERATION_FAILED?;
@@ -54,6 +54,32 @@ fn void! Buffer.sub_buffer(self, usz start_index, usz len, Buffer dest)
 	if (len > data.len) len = data.len;
 	char[] range = data.chars[start_index:len];
 	(void)dest.write(range);
+}
+
+fn Buffer Buffer.new_sub_buffer(self, usz start_index, usz len, Allocator allocator = allocator::heap())
+{
+	// we're always returning an allocaterd buffer, so no need for error, it will panic if malloc fails
+	Buffer *buf = (Buffer*)new(len, allocator);
+	(void)self.sub_buffer(start_index, len, buf);
+	return *buf;
+}
+
+fn void! Buffer.sub_string(self, usz start_index, usz len, DString* dest)
+{
+	if (len == 0) return BufferError.OPERATION_FAILED?;
+	BufferData* data = self.data();
+	if (start_index > data.len) return BufferError.INDEX_OUT_OF_RANGE?;
+	if (len > data.len) len = data.len;
+	char[] range = data.chars[start_index:len];
+	(void)dest.write(range);
+}
+
+fn DString Buffer.new_sub_string(self, usz start_index, usz len, Allocator allocator = allocator)
+{
+	// we're always returning an allocaterd DString, so no need for error, it will panic if malloc fails
+	DString *str = (DString*)new(len, allocator);
+	(void)self.sub_string(start_index, len, str);
+	return *str;
 }
 
 //+ Copying ===================================================================

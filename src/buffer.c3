@@ -68,8 +68,8 @@ fn Buffer new_file(String filepath)
 {
 	usz len = file::get_size(filepath) ?? DEFAULT_CAPACITY;
 	Buffer buf = Buffer{}.new_init(len, allocator::heap());
-	buf.open_file(filepath);
-	return buf;
+	//buf.open_file(filepath);
+	return buf.open_file(filepath);
 }
 
 fn Buffer temp_file(String filepath)
