@@ -67,3 +67,4 @@
 * equals
 * less
 * replace_chars
+* sub_buffer

@@ -1,4 +1,5 @@
 module buffer;
+import std::io;
 
 //+ Buffer editing ============================================================
 
@@ -43,6 +44,16 @@ fn void Buffer.replace_chars(self, char ch, char replacement)
 	{
 		if (*c == ch) *c = replacement;
 	}
+}
+
+fn void! Buffer.sub_buffer(self, usz start_index, usz len, Buffer dest)
+{
+	BufferData* data = self.data();
+	if (len == 0) return BufferError.OPERATION_FAILED?;
+	if (start_index > data.len) return BufferError.INDEX_OUT_OF_RANGE?;
+	if (len > data.len) len = data.len;
+	char[] range = data.chars[start_index:len];
+	(void)dest.write(range);
 }
 
 //+ Copying ===================================================================

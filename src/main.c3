@@ -21,8 +21,14 @@ fn int main(String[] args)
 	buf.append_buffer(buf2);
 	//buf.insertf(124, "\n[[insertf string @124]]");
 	buf.insertf(30, "@%d@", 6666);
+	Buffer nbuf = buffer::new();
+	(void)buf.sub_buffer(30, 30, nbuf);
 	io::printn(buf.str_view());
+	io::printn(nbuf.str_view());
+
+	io::printn(str.len());
 	buf.free();
 	buf2.free();
+	nbuf.free();
 	return 0;
 }

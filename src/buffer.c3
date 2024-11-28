@@ -14,6 +14,8 @@ fault BufferError
 	NULL_BUFFER,
 	NO_FILENAME,
 	SAVE_FAILED,
+	INDEX_OUT_OF_RANGE,
+	OPERATION_FAILED,
 }
 
 struct BufferData @private
