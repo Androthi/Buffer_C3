@@ -73,4 +73,6 @@
 * new_sub_string
 * trim
 * char_in_cset
-* 
+* cursor_to
+* peek_token
+* next_token

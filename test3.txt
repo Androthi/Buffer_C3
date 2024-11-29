@@ -1,1 +1,2 @@
-[inserting this text]
+token testing file using default delimiters
+"string" ^/ t,%hello

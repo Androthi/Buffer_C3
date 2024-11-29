@@ -68,8 +68,9 @@ fn void Buffer.replace_chars(self, char ch, char replacement)
 	}
 }
 
-fn void! Buffer.sub_buffer(self, usz start_index, usz len, Buffer* dest)
+fn void! Buffer.sub_buffer(&self, usz start_index, usz len, Buffer* dest)
 {
+	if (!*self) return BufferError.NULL_BUFFER?;
 	BufferData* data = self.data();
 	if (len == 0) return BufferError.OPERATION_FAILED?;
 	if (start_index > data.len) return BufferError.INDEX_OUT_OF_RANGE?;
@@ -78,16 +79,18 @@ fn void! Buffer.sub_buffer(self, usz start_index, usz len, Buffer* dest)
 	(void)dest.write(range);
 }
 
+//+ NOTE: corrupting memory somehow, free method sometimes faults.
 fn Buffer Buffer.new_sub_buffer(self, usz start_index, usz len, Allocator allocator = allocator::heap())
 {
-	// we're always returning an allocaterd buffer, so no need for error, it will panic if malloc fails
-	Buffer *buf = (Buffer*)new(len, allocator);
-	(void)self.sub_buffer(start_index, len, buf);
-	return *buf;
+	// we're always returning an allocaterd DString, so no need for error, it will panic if malloc fails
+	Buffer buf = new(len, allocator:allocator);
+	(void)self.sub_buffer(start_index, len, &buf);
+	return buf;
 }
 
-fn void! Buffer.sub_string(self, usz start_index, usz len, DString* dest)
+fn void! Buffer.sub_string(&self, usz start_index, usz len, DString* dest)
 {
+	if (!*self) return BufferError.NULL_BUFFER?;
 	if (len == 0) return BufferError.OPERATION_FAILED?;
 	BufferData* data = self.data();
 	if (start_index > data.len) return BufferError.INDEX_OUT_OF_RANGE?;
@@ -96,12 +99,12 @@ fn void! Buffer.sub_string(self, usz start_index, usz len, DString* dest)
 	(void)dest.write(range);
 }
 
-fn DString Buffer.new_sub_string(self, usz start_index, usz len, Allocator allocator = allocator)
+fn DString Buffer.new_sub_string(self, usz start_index, usz len, Allocator allocator = allocator::heap())
 {
 	// we're always returning an allocaterd DString, so no need for error, it will panic if malloc fails
-	DString *str = (DString*)new(len, allocator);
-	(void)self.sub_string(start_index, len, str);
-	return *str;
+	DString str = dstring::new(allocator:allocator);
+	(void)self.sub_string(start_index, len, &str);
+	return str;
 }
 
 //+ Copying ===================================================================

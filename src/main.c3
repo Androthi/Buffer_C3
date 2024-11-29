@@ -9,41 +9,61 @@ fn int main(String[] args)
 	defer trim_test.free();
 	trim_test.append("\n\t String with preceding and trailing white spaces\n\t ");
 	trim_test.trim();
-	io::printfn("trim test, there should be no white spaces\n:%s:\n\n", trim_test.str_view());
+	io::printfn("trim test, there should be no white spaces\n:%s:\n", trim_test.str_view());
 
 
 	Buffer buf = buffer::new();
+	defer buf.free();
 
 	Buffer buf2 = buffer::new_file("test.txt");
 	buf2.append("\n==============================\n");
 	buf2.append_file("test.txt");
-	//buf2.insert_file(30, "test3.txt");
 	buf2.save_as("test2.txt")!!;
-	
-	//io::printfn("len = %d", buf2.len());
 	buf2.replace_chars('7', '#');
 
-	//buf.append_chars("^appending some chars");
-	//buf.append('*');
+	io::printn("Testing insertf\n");
 	buf.append_buffer(buf2);
-	//buf.insertf(124, "\n[[insertf string @124]]");
 	buf.insertf(30, "@%d@", 6666);
-	Buffer nbuf;// = buffer::new();
+	io::printn(buf.str_view());
+
+	// testing sub_string and sub_buffer
+	io::printn("\ntesting sub_buffer, delete\n");
+	Buffer nbuf;
+	defer nbuf.free();
 	(void)buf.sub_buffer(30, 37, &nbuf);
 	nbuf.delete(7, 10);
-	DString str; // = dstring::new();
-	(void)nbuf.sub_string(7, 5, &str);
-	io::printf("str len = %d\nstr = %s\n", str.len(), str.str_view());
-	io::printn(buf.str_view());
 	io::printn(nbuf.str_view());
 
-	Buffer temp = nbuf.new_sub_buffer(1, 10);
-	io::printf("\n:%s", temp.str_view());
+	io::printn("\ntesting sub_string, new_sub_string\n");
+	DString str;
+	defer str.free();
+	(void)nbuf.sub_string(7, 5, &str);
+	io::printf("str len = %d\nstr = %s\n", str.len(), str.str_view());
+	DString temp = nbuf.new_sub_string(7, 5);
+	defer temp.free();
+	io::printf("temp :%s\n", temp.str_view());
 
-	temp.free();
-	str.free();
-	buf.free();
-	buf2.free();
-	nbuf.free();
+	Buffer nabuf = nbuf.new_sub_buffer(1, 10);
+	//defer nabuf.free(); // sometimes new_sub_buffer corrupts memory and faults on free(). 
+	io::printf("nabuf len :%d\ndat :%s\n",nabuf.len(), nabuf.str_view());
+
+	// testing tokenizer
+	nbuf.clear();
+	nbuf.append_file("test3.txt");
+	io::printn("===================================");
+	io::printn(nbuf.str_view());
+	io::printn("=============================");
+	nbuf.cursor_to(0);
+	while (true)
+	{
+		String! result = nbuf.next_token();
+		if( catch excuse = result )
+		{
+			io::printfn("\nEnd loop, excuse: %s", excuse);
+			break;
+		}
+		io::printf("\ntoken:%s", result);
+	}
+
 	return 0;
 }

@@ -11,6 +11,7 @@ const usz MIN_CAPACITY @private = 16;
 const usz DEFAULT_CAPACITY @private = 4096;
 
 const Cset WHITE_SPACES = "\t\n\r ";
+const Cset DELIMITERS = " \t\n\r,.<>|\\/-+*";
 
 fault BufferError
 {
@@ -19,6 +20,7 @@ fault BufferError
 	SAVE_FAILED,
 	INDEX_OUT_OF_RANGE,
 	OPERATION_FAILED,
+	EOF,
 }
 
 struct BufferData @private
@@ -47,7 +49,6 @@ fn Buffer Buffer.new_init(&self, usz capacity = DEFAULT_CAPACITY, Allocator allo
 	data.allocator = allocator;
 	data.len = 0;
 	data.capacity = capacity;
-	data.filepath = String{};
 	return *self = (Buffer)data;
 }
 
