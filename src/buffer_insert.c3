@@ -17,6 +17,8 @@ macro void Buffer.append(&self, value)
 			self.insert_chars(self.len(), value);
 		$case Char32:
 			self.insert_char32(self.len(), value);
+		$case Buffer:
+			self.insert_buffer(self.len(), value);
 		$default:
 			$switch
 				$case $defined((Char32)value):
@@ -58,6 +60,11 @@ macro usz Buffer.append_char32(&self, Char32 c)
 	return n;
 }
 
+macro usz Buffer.append_utf32(&self, Char32[] chars)
+{
+	usz n = self.append_utf32(chars);
+	return n;
+}
 
 fn void Buffer.appendf(&self, String format, args...)
 {
@@ -79,11 +86,6 @@ fn void Buffer.insertf(&self, usz index, String format, args...)
 	};
 }
 
-macro usz Buffer.append_utf32(&self, Char32[] chars)
-{
-	usz n = self.append_utf32(chars);
-	return n;
-}
 
 fn void Buffer.append_repeat(&self, char c, usz times)
 {
@@ -160,6 +162,8 @@ macro void Buffer.insert(&self, usz index, value)
 			self.insert_chars(index, value);
 		$case Char32:
 			self.insert_char32(index, value);
+		$case Buffer:
+			self.insert_buffer(index, value);
 		$default:
 			$switch
 				$case $defined((Char32)value):
