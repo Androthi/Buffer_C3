@@ -1,4 +1,6 @@
 # Buffer module for C3
+    this is a general purpose prototyping buffer. contains methods for adding and deleting data into the buffer, methods for tokenizing,
+    file i/o, plans include adding methods for scanning, search/replace, various test-editing style functions. 
 
 ## WIP
     this is work in progress
