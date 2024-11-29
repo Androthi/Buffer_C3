@@ -1,8 +1,8 @@
 # Buffer module for C3
 
 ## WIP
-    this is work in progress .  minimum error handling at this time
-
+    this is work in progress
+    
 ## implemented functions
 
 * new
@@ -71,3 +71,6 @@
 * new_sub_buffer
 * sub_string
 * new_sub_string
+* trim
+* char_in_cset
+* 

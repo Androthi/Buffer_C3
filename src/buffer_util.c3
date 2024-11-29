@@ -25,6 +25,28 @@ fn void Buffer.delete(&self, usz start, usz len = 1)
 	data.len = new_len;
 }
 
+macro bool char_in_cset(char c, Cset set)
+{
+	foreach (ch : set) if (ch == c) return true;
+	return false;
+}
+
+// remove white spaces from start and end  buffer
+fn void Buffer.trim(&self, Cset set = WHITE_SPACES)
+{
+	if (!*self) return;
+	BufferData* data = self.data();
+	if (data.len == 0) return;
+	usz count = 0;
+	while (count < data.len && char_in_cset(data.chars[count], set)) count++;
+	if (count == data.len) return self.clear();
+	if (count) self.delete(0, count);
+	count = data.len -1;
+	while (count > 0 && char_in_cset(data.chars[count], set)) count--;
+	if (count < data.len -1) return self.chop(count);
+}
+
+
 <*
  @require start < self.len()
  @require end < self.len()

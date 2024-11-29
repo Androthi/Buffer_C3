@@ -3,11 +3,14 @@ import std::io;
 import std::io::file;
 import std::core::string;
 
+
 distinct Buffer (OutStream) = void*;
-//distinct Buffer = void*;
+distinct Cset = String;
 
 const usz MIN_CAPACITY @private = 16;
 const usz DEFAULT_CAPACITY @private = 4096;
+
+const Cset WHITE_SPACES = "\t\n\r ";
 
 fault BufferError
 {
@@ -68,8 +71,8 @@ fn Buffer new_file(String filepath)
 {
 	usz len = file::get_size(filepath) ?? DEFAULT_CAPACITY;
 	Buffer buf = Buffer{}.new_init(len, allocator::heap());
-	//buf.open_file(filepath);
-	return buf.open_file(filepath);
+	buf.open_file(filepath);
+	return buf;
 }
 
 fn Buffer temp_file(String filepath)

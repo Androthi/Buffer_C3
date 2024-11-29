@@ -4,7 +4,14 @@ import std::io;
 
 fn int main(String[] args)
 {
-	
+
+	Buffer trim_test = buffer::new();
+	defer trim_test.free();
+	trim_test.append("\n\t String with preceding and trailing white spaces\n\t ");
+	trim_test.trim();
+	io::printfn("trim test, there should be no white spaces\n:%s:\n\n", trim_test.str_view());
+
+
 	Buffer buf = buffer::new();
 
 	Buffer buf2 = buffer::new_file("test.txt");
