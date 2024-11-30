@@ -64,6 +64,14 @@ fn int main(String[] args)
 		}
 		io::printf("\ntoken:%s", result);
 	}
-
+	
+	io::printf("nbuf len = %d\n", nbuf.len());
+	nbuf.cursor_to(50);
+	nbuf.cursor_to_bol(); // should be at '"'
+	char c = nbuf.get_char();
+	if(c) io::printf("got char :%c\n", c);
+	nbuf.cursor_to_bof();
+	io::printf("line :%s\n", nbuf.get_line());
+	io::printf("line :%s\n", nbuf.get_line());
 	return 0;
 }

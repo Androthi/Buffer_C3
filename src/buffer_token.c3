@@ -1,13 +1,4 @@
 module buffer;
-import std::io;
-
-fn void Buffer.cursor_to(&self, usz index)
-{
-	if (!*self) return;
-	BufferData* data = self.data();
-	if (index > data.len) index = data.len;
-	data.cursor = index;
-}
 
 fn String! Buffer.next_token(&self, Cset set = DELIMITERS)
 {
