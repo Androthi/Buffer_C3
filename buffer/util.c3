@@ -25,6 +25,22 @@ fn void Buffer.delete(&self, usz start, usz len = 1)
 	data.len = new_len;
 }
 
+fn void Buffer.replace_string(&self, String needle, String replacement)
+{
+	if (!*self)
+	{
+		self.append_chars(replacement);
+		return;
+	}
+	
+	usz! index = self.find(needle);
+	if (try index)
+	{
+		self.delete(index, needle.len);
+		self.insert_chars(index, replacement);
+	}
+}
+
 macro bool char_in_cset(char c, Cset set)
 {
 	foreach (ch : set) if (ch == c) return true;

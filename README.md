@@ -321,8 +321,19 @@
 
     returns the line at the cursor index, advances cursor by 1 beyond the end of line.
 
-### fn usz! Buffer.find(&self, String needle, usz start_from = 0)
+### fn usz! Buffer.find(&self, String needle, usz start_from = 0, bool case_sensitive = true)
 
     returns index of needle or EOF
     begins search in buffer from start_index
+    ASCII strings only
 
+### macro usz! Buffer.ifind(&self, String needle, usz start_from = 0)
+
+    returns index of needle or EOF
+    begins case insensitive search in buffer from start_index
+    ASCII strings only
+
+### fn void Buffer.replace_string(&self, String needle, String replacement)
+
+    if needle exists in the buffer, it is replaced by replacement.
+    if the buffer is empty, needle is written to the buffer.

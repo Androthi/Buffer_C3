@@ -36,7 +36,7 @@ fn void Buffer.cursor_left(&self, usz n)
 // returns index, maybe optional return with errors.
 fn usz Buffer.cursor_to_bol(&self)
 {
-	if (!*self) 0;
+	if (!*self) return 0;
 	BufferData* data = self.data();
 	if (data.cursor == 0) return 0;
 
@@ -73,28 +73,31 @@ fn usz Buffer.cursor_to_eol(&self)
 
 //= NOTE: these will likely get their own files later
 
-fn char Buffer.get_char(&self)
+fn char! Buffer.get_char(&self)
 {
-	//+ TODO do i want to add optional return, null buffer, eof. ?? 
-	if (!*self) return 0;
+	if (!*self) return BufferError.NULL_BUFFER?;
 	BufferData* data = self.data();
-	if (data.cursor == data.len) return 0;
+	if (data.cursor == data.len) return BufferError.EOF?;
 	return data.chars[data.cursor++];
 }
 
-fn String Buffer.get_line(&self)
+fn String! Buffer.get_line(&self)
 {
-	//+ TODO do i want to add optional return, null buffer, eof. ?? 
-	if (!*self) return String{};
+	if (!*self) return BufferError.NULL_BUFFER?;
 	BufferData* data = self.data();
+	if (data.cursor == data.len) return BufferError.EOF?;
 	usz start = self.cursor_to_bol();
 	usz end = self.cursor_to_eol();
 	if (data.cursor < data.len) data.cursor++; // advance 1 char beyond EOL.
 	return (String)data.chars[start:end-start];
 }
 
-//+ TODO: add case_sensitive option
-fn usz! Buffer.find(&self, String needle, usz start_from = 0)
+macro usz! Buffer.ifind(&self, String needle, usz start_from = 0)
+{
+	self.find(needle, start_from, false);
+}
+
+fn usz! Buffer.find(&self, String needle, usz start_from = 0, bool case_sensitive = true)
 {
 	if (!*self) return BufferError.NULL_BUFFER?;
 	BufferData* data = self.data();
@@ -103,12 +106,27 @@ fn usz! Buffer.find(&self, String needle, usz start_from = 0)
 
 	if (needle_len > 0 && data.len - start_from >= needle_len)
 	{
-		io::printn("starting");
-		String source = (String)data.chars[start_from:data.len];
-		char first = needle[0];
-		foreach (i, c: source[..^needle_len])
+		String source = (String)data.chars[start_from..data.len];
+			
+		if (case_sensitive)
 		{
-			if (c == first && source[i:needle_len] == needle) return i;
+			char first = needle[0];
+			foreach (i, c: source[..^needle_len])
+			{
+				if (c == first && source[i:needle_len] == needle) return i;
+			}
+		} else
+		{
+			@pool(data.allocator)
+			{
+				String tneedle = needle.temp_ascii_to_lower();
+				String tsource = source.temp_ascii_to_lower();
+				char first = tneedle[0];
+				foreach (i, c: tsource[..^needle_len])
+				{
+					if (c == first && tsource[i:needle_len] == tneedle) return i;
+				}
+			};
 		}
 	}
 	return BufferError.EOF?;

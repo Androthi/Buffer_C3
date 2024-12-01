@@ -68,11 +68,11 @@ fn int main(String[] args)
 	io::printf("nbuf len = %d\n", nbuf.len());
 	nbuf.cursor_to(50);
 	nbuf.cursor_to_bol(); // should be at '"'
-	char c = nbuf.get_char();
-	if(c) io::printf("got char :%c\n", c);
+	char! c = nbuf.get_char();
+	if(try c) io::printf("got char :%c\n", c);
 	nbuf.cursor_to_bof();
-	io::printf("line :%s\n", nbuf.get_line());
-	io::printf("line :%s\n", nbuf.get_line());
+	(void)io::printf("line :%s\n", nbuf.get_line());
+	(void)io::printf("line :%s\n", nbuf.get_line());
 	nbuf.cursor_to_bof();
 	usz! index = nbuf.find("string");
 	if (try index)
@@ -80,6 +80,8 @@ fn int main(String[] args)
 		io::printfn("found 'string' at index %d\n", index);
 		nbuf.cursor_to(index);
 		if( try String tkn = nbuf.next_token()) io::printfn("got token :%s", tkn);
-	} 
+	}
+	nbuf.replace_string("string", "replacement");
+	io::printf("\nafter replace:\n%s\n", nbuf.str_view());
 	return 0;
 }
