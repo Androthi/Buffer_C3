@@ -73,5 +73,13 @@ fn int main(String[] args)
 	nbuf.cursor_to_bof();
 	io::printf("line :%s\n", nbuf.get_line());
 	io::printf("line :%s\n", nbuf.get_line());
+	nbuf.cursor_to_bof();
+	usz! index = nbuf.find("string");
+	if (try index)
+	{
+		io::printfn("found 'string' at index %d\n", index);
+		nbuf.cursor_to(index);
+		if( try String tkn = nbuf.next_token()) io::printfn("got token :%s", tkn);
+	} 
 	return 0;
 }

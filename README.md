@@ -320,3 +320,9 @@
 ### fn String Buffer.get_line(&self)
 
     returns the line at the cursor index, advances cursor by 1 beyond the end of line.
+
+### fn usz! Buffer.find(&self, String needle, usz start_from = 0)
+
+    returns index of needle or EOF
+    begins search in buffer from start_index
+
