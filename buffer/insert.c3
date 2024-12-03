@@ -195,8 +195,8 @@ fn void Buffer.insert_chars(&self, usz index, String s)
 	usz len = self.len();
 	if (data.chars[:len].ptr == s.ptr) return;
 	index = min(index, len);
-	data.len += s.len;
 	self.adjust_for_insert(index, s.len);
+	data.len += s.len;
 	char* start = data.chars[index:s.len].ptr;
 	mem::move(start, s, s.len);
 }

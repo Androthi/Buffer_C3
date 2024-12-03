@@ -95,11 +95,10 @@ fn void! Buffer.sub_buffer(&self, usz start_index, usz len, Buffer* dest)
 	(void)dest.write(range);
 }
 
-//+ NOTE: corrupting memory somehow, free method sometimes faults.
 fn Buffer Buffer.new_sub_buffer(self, usz start_index, usz len, Allocator allocator = allocator::heap())
 {
 	// we're always returning an allocaterd DString, so no need for error, it will panic if malloc fails
-	Buffer buf = new(len, allocator:allocator);
+	Buffer buf = new();
 	(void)self.sub_buffer(start_index, len, &buf);
 	return buf;
 }

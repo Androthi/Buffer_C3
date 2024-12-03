@@ -21,18 +21,22 @@ fn int main(String[] args)
 	buf2.save_as("test2.txt")!!;
 	buf2.replace_chars('7', '#');
 
-	io::printn("Testing insertf\n");
+	// io::printn("Testing insertf\n");
 	buf.append_buffer(buf2);
 	buf.insertf(30, "@%d@", 6666);
-	io::printn(buf.str_view());
+	// io::printn(buf.str_view());
 
 	// testing sub_string and sub_buffer
 	io::printn("\ntesting sub_buffer, delete\n");
-	Buffer nbuf;
+	Buffer nbuf = buffer::new(17);
 	defer nbuf.free();
 	(void)buf.sub_buffer(30, 37, &nbuf);
 	nbuf.delete(7, 10);
 	io::printn(nbuf.str_view());
+
+	Buffer nabuf = nbuf.new_sub_buffer(1, 10);
+	defer nabuf.free();
+	io::printf("nabuf len :%d\ndat :%s\n",nabuf.len(), nabuf.str_view());
 
 	io::printn("\ntesting sub_string, new_sub_string\n");
 	DString str;
@@ -42,10 +46,6 @@ fn int main(String[] args)
 	DString temp = nbuf.new_sub_string(7, 5);
 	defer temp.free();
 	io::printf("temp :%s\n", temp.str_view());
-
-	Buffer nabuf = nbuf.new_sub_buffer(1, 10);
-	//defer nabuf.free(); // sometimes new_sub_buffer corrupts memory and faults on free(). 
-	io::printf("nabuf len :%d\ndat :%s\n",nabuf.len(), nabuf.str_view());
 
 	// testing tokenizer
 	nbuf.clear();
@@ -83,5 +83,6 @@ fn int main(String[] args)
 	}
 	nbuf.replace_string("string", "replacement");
 	io::printf("\nafter replace:\n%s\n", nbuf.str_view());
+
 	return 0;
 }

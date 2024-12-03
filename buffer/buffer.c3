@@ -145,16 +145,16 @@ fn void Buffer.reserve(&self, usz addition) @private
 	}
 	usz len = data.len + addition;
 	if (data.capacity >= len) return;
-	usz new_capacity = data.capacity * 2; //- NOTE: should this be *2 here?
+	usz new_capacity = data.capacity * 2;
 	if (new_capacity < MIN_CAPACITY) new_capacity = MIN_CAPACITY;
 	while (new_capacity < len) new_capacity *= 2;
 	data.capacity = new_capacity;
 	*self = (Buffer)allocator::realloc(data.allocator, data, BufferData.sizeof + new_capacity);
 }
 
+// NOTE important: adjust data.len *after* calling adjust_for_insert
 fn void Buffer.adjust_for_insert(&self, usz index, usz len) @private
 {
-	// should make this a BufferData method?
 	BufferData* data = self.data();
 	if (index == data.len) return; // we are at EOF, nothing to move
 	char* start = &data.chars[index];
