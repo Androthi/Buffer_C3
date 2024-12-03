@@ -4,7 +4,47 @@ import std::io;
 
 fn int main(String[] args)
 {
+	// a doc gen test program
+	Buffer source = buffer::new_file("Buffer/buffer.c3");
+	defer source.free();
+	Buffer dest = buffer::new();
+	dest.set_filepath("doc_test.md");
+	defer dest.free();
+	dest.append("# Auto Document Generator Test\n\n");
+	defer dest.save()!!;
 
+	//extract sub_buffers for every <* *> match
+	while( try source.find_next("<*"))
+	{
+		usz start_index = source.cursor_right(1);
+		usz! end_index = source.find_next("*>");
+		if ( catch result = end_index){
+			io::printn("Error: missing '*>'");
+			break;
+		}
+		end_index --;
+		Buffer sec = source.new_sub_buffer(start_index, end_index - start_index, allocator::temp());
+
+		// get the function or macro definition after *>
+		source.brk(); // advance to the first white space
+		source.span(); // advance to the first non-white space
+		String! fn_def = source.get_line();
+		if (try fn_def){
+			dest.appendf("## %s\n", fn_def);
+			dest.append_buffer(sec);
+			dest.append("\n\n");
+		} else
+		{
+			io::printn("Error: unable to get function or macro definition");
+			break;
+		}
+	}
+
+	return 0;
+}
+
+
+/*
 	Buffer trim_test = buffer::new();
 	defer trim_test.free();
 	trim_test.append("\n\t String with preceding and trailing white spaces\n\t ");
@@ -88,4 +128,4 @@ fn int main(String[] args)
 	while(try pos = nbuf.find_next("find")) io::printfn("found 'find' at index:%d", pos);
 
 	return 0;
-}
+*/

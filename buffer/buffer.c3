@@ -49,6 +49,8 @@ fn Buffer Buffer.new_init(&self, usz capacity = DEFAULT_CAPACITY, Allocator allo
 	data.allocator = allocator;
 	data.len = 0;
 	data.capacity = capacity;
+	data.cursor = 0;
+	data.filepath = String{};
 	return *self = (Buffer)data;
 }
 
@@ -163,7 +165,6 @@ fn void Buffer.adjust_for_insert(&self, usz index, usz len) @private
 
 //+ File saving methods =======================================================
 
-//- TODO: save should return an error if there is an empty string for filepath
 fn void! Buffer.save(&self)
 {
 	BufferData* data = self.data();

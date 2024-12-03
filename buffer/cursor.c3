@@ -1,36 +1,39 @@
 module buffer;
 import std::io;
 
-macro void Buffer.cursor_to_eof(&self)
+macro usz Buffer.cursor_to_eof(&self)
 {
 	self.cursor_to(self.len());
 }
 
-macro void Buffer.cursor_to_bof(&self)
+macro usz Buffer.cursor_to_bof(&self)
 {
 	self.cursor_to(0);
 }
 
-fn void Buffer.cursor_to(&self, usz index)
+fn usz Buffer.cursor_to(&self, usz index)
 {
-	if (!*self) return;
+	if (!*self) return 0;
 	BufferData* data = self.data();
 	if (index > data.len) index = data.len;
 	data.cursor = index;
+	return data.cursor;
 }
 
-fn void Buffer.cursor_right(&self, usz n)
+fn usz Buffer.cursor_right(&self, usz n)
 {
-	if (!*self) return;
+	if (!*self) return 0;
 	BufferData* data = self.data();
 	if ((data.cursor += n) > data.len) data.cursor = data.len;
+	return data.cursor;
 }
 
-fn void Buffer.cursor_left(&self, usz n)
+fn usz Buffer.cursor_left(&self, usz n)
 {
-	if (!*self) return;
+	if (!*self) return 0;
 	BufferData* data = self.data();
 	if ((isz)(data.cursor -= n) < 0) data.cursor = 0;
+	return data.cursor;
 }
 
 // returns index, maybe optional return with errors.
@@ -70,6 +73,29 @@ fn usz Buffer.cursor_to_eol(&self)
 	return data.cursor;
 }
 
+fn usz Buffer.span(&self, Cset set = WHITE_SPACES)
+{
+	if (!*self) return 0;
+	BufferData* data = self.data();
+	while (data.cursor < data.len)
+	{
+		if (!char_in_cset(data.chars[data.cursor], set)) break;
+		data.cursor++;
+	}
+	return data.cursor;
+}
+
+fn usz Buffer.brk(&self, Cset set = WHITE_SPACES)
+{
+	if (!*self) return 0;
+	BufferData* data = self.data();
+	while (data.cursor < data.len)
+	{
+		if (char_in_cset(data.chars[data.cursor], set)) break;
+		data.cursor++;
+	}
+	return data.cursor;	
+}
 
 //= NOTE: these will likely get their own files later
 
@@ -81,14 +107,34 @@ fn char! Buffer.get_char(&self)
 	return data.chars[data.cursor++];
 }
 
-fn String! Buffer.get_line(&self)
+fn String! Buffer.get_line(&self, bool entire_line = true)
 {
 	if (!*self) return BufferError.NULL_BUFFER?;
 	BufferData* data = self.data();
 	if (data.cursor == data.len) return BufferError.EOF?;
-	usz start = self.cursor_to_bol();
+	usz start = data.cursor;
+	if (entire_line) start = self.cursor_to_bol();
 	usz end = self.cursor_to_eol();
 	if (data.cursor < data.len) data.cursor++; // advance 1 char beyond EOL.
+	return (String)data.chars[start:end-start];
+}
+
+macro Buffer.get_cursor_line(&self)
+{
+	self.get_line(false)!;
+}
+
+fn String! Buffer.get_line_from(&self, usz start)
+{
+	if (!*self) return BufferError.NULL_BUFFER?;
+	BufferData* data = self.data();
+	if (start >= data.len) return BufferError.EOF?;
+	usz end = start;
+	while (end < data.len)
+	{
+		if (char_in_cset(data.chars[end], "\n\r")) break;
+		end++;
+	}
 	return (String)data.chars[start:end-start];
 }
 
@@ -98,7 +144,7 @@ fn usz! Buffer.find_next(&self, String needle, bool case_sensitive = true)
 	BufferData* data = self.data();
 	usz! index = self.find(needle, data.cursor, case_sensitive);
 	if( try index ){
-	data.cursor = ++index; //need to be 1 past find index for next find pass
+		data.cursor = ++index; //need to be 1 past find index for next find pass
 		return data.cursor-1;
 	} else {
 		return BufferError.EOF?;
