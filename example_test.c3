@@ -84,5 +84,8 @@ fn int main(String[] args)
 	nbuf.replace_string("string", "replacement");
 	io::printf("\nafter replace:\n%s\n", nbuf.str_view());
 
+	nbuf.cursor_to_bof();
+	while(try pos = nbuf.find_next("find")) io::printfn("found 'find' at index:%d", pos);
+
 	return 0;
 }

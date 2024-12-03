@@ -1,2 +1,3 @@
-token testing file using default delimiters
+token and find testing file using default delimiters
+will find the word find.
 "string" ^/ t,%hello

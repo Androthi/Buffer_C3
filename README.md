@@ -333,6 +333,19 @@
     begins case insensitive search in buffer from start_index
     ASCII strings only
 
+### fn usz! Buffer.find_next(&self, String needle, bool case_sensitive = true)
+
+    returns index of needle or EOF
+    begins case sensitive search using the internal cursor as starting index.
+    the internal cursor is adjusted either at EOF or at the index of found needle.
+
+### macro usz! Buffer.ifind(&self, String needle)
+
+    returns index of needle or EOF
+    begins case insensitive search in buffer from the internal cursor
+    the internal cursor is adjusted either at EOF or at the index of found needle.
+    ASCII strings only
+
 ### fn void Buffer.replace_string(&self, String needle, String replacement)
 
     if needle exists in the buffer, it is replaced by replacement.

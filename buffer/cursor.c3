@@ -92,9 +92,22 @@ fn String! Buffer.get_line(&self)
 	return (String)data.chars[start:end-start];
 }
 
-macro usz! Buffer.ifind(&self, String needle, usz start_from = 0)
+fn usz! Buffer.find_next(&self, String needle, bool case_sensitive = true)
 {
-	self.find(needle, start_from, false);
+	if (!*self) return BufferError.NULL_BUFFER?;
+	BufferData* data = self.data();
+	usz! index = self.find(needle, data.cursor, case_sensitive);
+	if( try index ){
+	data.cursor = ++index; //need to be 1 past find index for next find pass
+		return data.cursor-1;
+	} else {
+		return BufferError.EOF?;
+	}
+}
+
+macro usz! Buffer.ifind_next(&self, String needle)
+{
+	self.find_next(needle, true);
 }
 
 fn usz! Buffer.find(&self, String needle, usz start_from = 0, bool case_sensitive = true)
@@ -113,7 +126,7 @@ fn usz! Buffer.find(&self, String needle, usz start_from = 0, bool case_sensitiv
 			char first = needle[0];
 			foreach (i, c: source[..^needle_len])
 			{
-				if (c == first && source[i:needle_len] == needle) return i;
+				if (c == first && source[i:needle_len] == needle) return i + start_from;
 			}
 		} else
 		{
@@ -124,10 +137,15 @@ fn usz! Buffer.find(&self, String needle, usz start_from = 0, bool case_sensitiv
 				char first = tneedle[0];
 				foreach (i, c: tsource[..^needle_len])
 				{
-					if (c == first && tsource[i:needle_len] == tneedle) return i;
+					if (c == first && tsource[i:needle_len] == tneedle) return i + start_from;
 				}
 			};
 		}
 	}
 	return BufferError.EOF?;
+}
+
+macro usz! Buffer.ifind(&self, String needle, usz start_from = 0)
+{
+	self.find(needle, start_from, false);
 }
