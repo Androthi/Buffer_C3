@@ -8,7 +8,7 @@ macro usz Buffer.cursor_to_eof(&self)
 
 macro usz Buffer.cursor_to_bof(&self)
 {
-	self.cursor_to(0);
+	return self.cursor_to(0);
 }
 
 fn usz Buffer.cursor_to(&self, usz index)
@@ -119,9 +119,9 @@ fn String! Buffer.get_line(&self, bool entire_line = true)
 	return (String)data.chars[start:end-start];
 }
 
-macro Buffer.get_cursor_line(&self)
+macro String! Buffer.get_cursor_line(&self)
 {
-	self.get_line(false)!;
+	return self.get_line(false)!;
 }
 
 fn String! Buffer.get_line_from(&self, usz start)

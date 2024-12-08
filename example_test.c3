@@ -1,10 +1,111 @@
 module buffer_test;
 import buffer;
 import std::io;
+import std::io::path;
+import std::collections::map;
+import std::os::win32;
+
+Map(<String, Buffer>) buflist;
+
+
+fn String Path.extract_dirname(self)
+{
+	String dir_path = self.dirname();
+	usz! dir_start = dir_path.rindex_of_char(path::PREFERRED_SEPARATOR);
+	if (try dir_start) dir_path = dir_path[dir_start+1:dir_path.len-dir_start-1];
+	return dir_path;
+}
+
+fn bool! walker(Path p, bool is_dir, void*)
+{
+	//io::printn(p.str_view());
+	if (!is_dir)
+	{
+		if (p.has_extension("c3"))
+		{
+			String dir_name = p.extract_dirname();
+			// see if it's already in list
+			Buffer cur_buf = buffer::temp_file(p.path_string);
+			usz! index = cur_buf.find("module");
+			if ( catch error = index)
+			{
+				io::printn("Error, .c3 file missing module identifier");
+				return true;
+			}
+			cur_buf.span();
+			cur_buf.brk();
+			String! module_name = cur_buf.get_cursor_line();
+			if (catch error = module_name)
+			{
+				io::printn("Error, couldn't get the line from module");
+				return true;
+			}
+			module_name = module_name.strip_end(";");
+
+			Buffer cur_module;
+			if (!buflist.has_key(module_name))
+			{
+				cur_module = buffer::new();
+				cur_module.appendf ("# %s\n\n", module_name);
+				buflist.set(module_name, cur_module);
+			} else
+			{
+				cur_module = buflist.get(module_name)!;
+			}
+			
+			cur_buf.cursor_to_bof();
+			while( try cur_buf.find_next("<*"))
+			{
+				usz start_index = cur_buf.cursor_right(1);
+				usz! end_index = cur_buf.find_next("*>");
+				if ( catch result = end_index){
+					io::printn("Error: missing '*>'");
+					break;
+				}
+				end_index --;
+				Buffer sec = cur_buf.new_sub_buffer(start_index, end_index - start_index, allocator::temp());
+
+				// get the function or macro definition after *>
+				cur_buf.brk(); // advance to the first white space
+				cur_buf.span(); // advance to the first non-white space
+				String! fn_def = cur_buf.get_line();
+				if (try fn_def){
+					cur_module.appendf("## %s\n", fn_def);
+					cur_module.append_buffer(sec);
+					cur_module.append("\n\n");
+				} else
+				{
+					io::printn("Error: unable to get function or macro definition");
+					break;
+				}
+			}
+			//io::printfn("Directory :%s\nFile Name :%s\nModule Name :%s", dir_name, p.basename(), module_name);
+		}
+	}
+	return false;
+}
 
 fn int main(String[] args)
 {
+
 	// a doc gen test program
+
+	Path! path = path::temp_cwd();
+	(void)path.walk(&walker, null);
+
+
+	
+	//PathList list = path::new_ls(path)!!;
+ 	//foreach(p : list)
+	//{
+	//	if (p.has_extension("c3"))
+	//	{
+
+	//	}
+	//	std::io::printn(p.str_view());
+	//}
+
+/*
 	Buffer source = buffer::new_file("Buffer/buffer.c3");
 	defer source.free();
 	Buffer dest = buffer::new();
@@ -39,7 +140,7 @@ fn int main(String[] args)
 			break;
 		}
 	}
-
+*/
 	return 0;
 }
 
