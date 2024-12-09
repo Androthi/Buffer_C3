@@ -1,6 +1,11 @@
 module buffer;
 import std::io;
 
+macro usz Buffer.get_cursor(self)
+{
+	return self.data().cursor;
+}
+
 macro usz Buffer.cursor_to_eof(&self)
 {
 	self.cursor_to(self.len());
@@ -33,6 +38,20 @@ fn usz Buffer.cursor_left(&self, usz n)
 	if (!*self) return 0;
 	BufferData* data = self.data();
 	if ((isz)(data.cursor -= n) < 0) data.cursor = 0;
+	return data.cursor;
+}
+
+fn usz Buffer.cursor_right_lines(&self, usz num_lines)
+{
+	if (!*self) return 0;
+	BufferData* data = self.data();
+	while (num_lines)
+	{
+		self.cursor_to_eol();
+		if (data.cursor == data.len) return data.cursor;
+		data.cursor++;
+		num_lines--;
+	}
 	return data.cursor;
 }
 
@@ -105,6 +124,14 @@ fn char! Buffer.get_char(&self)
 	BufferData* data = self.data();
 	if (data.cursor == data.len) return BufferError.EOF?;
 	return data.chars[data.cursor++];
+}
+
+fn char! Buffer.peek_char_at(&self, usz index)
+{
+	if (!*self) return BufferError.NULL_BUFFER?;
+	BufferData* data = self.data();
+	if ( index > data.len) return BufferError.INDEX_OUT_OF_RANGE?;
+	return data.chars[index];
 }
 
 fn String! Buffer.get_line(&self, bool entire_line = true)

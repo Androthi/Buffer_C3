@@ -7,7 +7,6 @@ import std::os::win32;
 
 Map(<String, Buffer>) buflist;
 
-
 fn String Path.extract_dirname(self)
 {
 	String dir_path = self.dirname();
@@ -18,35 +17,43 @@ fn String Path.extract_dirname(self)
 
 fn bool! walker(Path p, bool is_dir, void*)
 {
-	//io::printn(p.str_view());
+	String dir_name = p.extract_dirname();
 	if (!is_dir)
 	{
 		if (p.has_extension("c3"))
 		{
-			String dir_name = p.extract_dirname();
-			// see if it's already in list
+			io::printfn("Processing file :%s", p.basename());
 			Buffer cur_buf = buffer::temp_file(p.path_string);
-			usz! index = cur_buf.find("module");
-			if ( catch error = index)
+			while (true)
 			{
-				io::printn("Error, .c3 file missing module identifier");
-				return true;
+				// we need to find module definition, make sure it is flush with line, so we know it's the correct one
+				usz! index = cur_buf.find_next("module");
+				if ( catch error = index)
+				{
+					io::printn("Error, .c3 file missing module identifier");
+					return true;
+				}
+				usz cursor_pos = cur_buf.get_cursor();
+				if (--cursor_pos > 0 ) cursor_pos--;
+				if (cursor_pos > 0 && cur_buf.peek_char_at(cursor_pos)! != '\n') continue;
+				break;
 			}
-			cur_buf.span();
 			cur_buf.brk();
-			String! module_name = cur_buf.get_cursor_line();
+			cur_buf.span();
+			String! module_name = cur_buf.get_line();
 			if (catch error = module_name)
 			{
 				io::printn("Error, couldn't get the line from module");
 				return true;
 			}
 			module_name = module_name.strip_end(";");
-
+			io::printfn("Got module name :%s", module_name);
+			// see if it's already in list
 			Buffer cur_module;
 			if (!buflist.has_key(module_name))
 			{
 				cur_module = buffer::new();
-				cur_module.appendf ("# %s\n\n", module_name);
+				cur_module.appendf ("# %s\n", module_name);
 				buflist.set(module_name, cur_module);
 			} else
 			{
@@ -56,6 +63,11 @@ fn bool! walker(Path p, bool is_dir, void*)
 			cur_buf.cursor_to_bof();
 			while( try cur_buf.find_next("<*"))
 			{
+				// we are only interested in processing '<*' that start at beginning of a line
+				// after the find_next, the cursor will be pointing at the '*'
+				usz cursor_pos = cur_buf.get_cursor();
+				if (--cursor_pos > 0 ) cursor_pos--;
+				if (cursor_pos > 0 && cur_buf.peek_char_at(cursor_pos)! != '\n') continue;
 				usz start_index = cur_buf.cursor_right(1);
 				usz! end_index = cur_buf.find_next("*>");
 				if ( catch result = end_index){
@@ -70,17 +82,34 @@ fn bool! walker(Path p, bool is_dir, void*)
 				cur_buf.span(); // advance to the first non-white space
 				String! fn_def = cur_buf.get_line();
 				if (try fn_def){
-					cur_module.appendf("## %s\n", fn_def);
-					cur_module.append_buffer(sec);
-					cur_module.append("\n\n");
+					// if fn_def is module, this is top level doc
+					if (fn_def.starts_with("module"))
+					{
+						io::printn("top level");
+						usz save_cursor = cur_module.get_cursor();
+						cur_module.cursor_to_bof();
+						usz inx = cur_module.cursor_right_lines(2);
+						cur_module.insert(inx, "\n\n");
+						cur_module.insert_buffer(inx, sec);
+						cur_module.cursor_to(save_cursor);
+
+					} else
+					{
+						cur_module.appendf("## %s\n", fn_def);
+						cur_module.append_buffer(sec);
+						cur_module.append("\n\n");
+					}
 				} else
 				{
 					io::printn("Error: unable to get function or macro definition");
 					break;
 				}
 			}
-			//io::printfn("Directory :%s\nFile Name :%s\nModule Name :%s", dir_name, p.basename(), module_name);
 		}
+	} else
+	{
+		// for debug
+		//io::printfn("Processing directory :%s", dir_name);
 	}
 	return false;
 }
@@ -91,61 +120,34 @@ fn int main(String[] args)
 	// a doc gen test program
 
 	Path! path = path::temp_cwd();
+	io::printfn("Working on project folder :%s", path.path_string)!!;
 	(void)path.walk(&walker, null);
 
 
-	
-	//PathList list = path::new_ls(path)!!;
- 	//foreach(p : list)
-	//{
-	//	if (p.has_extension("c3"))
-	//	{
-
-	//	}
-	//	std::io::printn(p.str_view());
-	//}
-
-/*
-	Buffer source = buffer::new_file("Buffer/buffer.c3");
-	defer source.free();
-	Buffer dest = buffer::new();
-	dest.set_filepath("doc_test.md");
-	defer dest.free();
-	dest.append("# Auto Document Generator Test\n\n");
-	defer dest.save()!!;
-
-	//extract sub_buffers for every <* *> match
-	while( try source.find_next("<*"))
+	// save the files to /doc folder
+	DString work = dstring::temp_new();
+	work.append(path.path_string)!!;
+	work.append(path::PREFERRED_SEPARATOR);
+	work.append("docs");
+	work.append(path::PREFERRED_SEPARATOR);
+	String doc_folder = work.tcopy_str();
+	buflist.@each(;String key, Buffer value)
 	{
-		usz start_index = source.cursor_right(1);
-		usz! end_index = source.find_next("*>");
-		if ( catch result = end_index){
-			io::printn("Error: missing '*>'");
-			break;
-		}
-		end_index --;
-		Buffer sec = source.new_sub_buffer(start_index, end_index - start_index, allocator::temp());
-
-		// get the function or macro definition after *>
-		source.brk(); // advance to the first white space
-		source.span(); // advance to the first non-white space
-		String! fn_def = source.get_line();
-		if (try fn_def){
-			dest.appendf("## %s\n", fn_def);
-			dest.append_buffer(sec);
-			dest.append("\n\n");
-		} else
-		{
-			io::printn("Error: unable to get function or macro definition");
-			break;
-		}
-	}
-*/
+		work.clear();
+		work.append (key);
+		work.delete_range(0, 6); // remove "module" from name
+		work.insert_at (0, doc_folder);
+		work.append (".md");
+		value.save_as (work.str_view())!!;
+	};
 	return 0;
 }
 
 
 /*
+// old test data.
+//+ TODO these should likely go into an official test.
+
 	Buffer trim_test = buffer::new();
 	defer trim_test.free();
 	trim_test.append("\n\t String with preceding and trailing white spaces\n\t ");

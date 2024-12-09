@@ -1,3 +1,9 @@
+<* 
+ this is a general purpose prototyping module used for parsing and creating files.
+ contains methods for adding and deleting data into the buffer, tokenizing, cursor movements,
+ file i/o, varisous search, replace methods.
+ Buffer uses dynamic memory, all insertion methods will resize the buffer as needed.
+*>
 module buffer;
 import std::io;
 import std::io::file;

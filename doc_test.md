@@ -1,5 +1,8 @@
 # Auto Document Generator Test
 
+## module buffer;
+ top level doc
+
 ## fn Buffer Buffer.new_init(&self, usz capacity = DEFAULT_CAPACITY, Allocator allocator = allocator::heap())
 
  Allocate memory for a new Buffer object. Panics if allocation fails

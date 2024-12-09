@@ -313,6 +313,14 @@
 
     moves the internal cursor towards the beginning of the buffer by n amount.
 
+### macro usz Buffer.get_cursor(self)
+
+    returns the index of the cursor.
+
+### fn usz Buffer.cursor_right_lines(&self, usz num_lines)
+
+    tries to move the cursor right num_lines, returns the index.
+
 ### fn usz Buffer.span(&self, Cset set = WHITE_SPACES)
 
     advances the internal cursor to the next character that is not a member of set.
@@ -323,9 +331,14 @@
     advances te internal cursor to the next character that is a member of set.
     returns the index of cursor.
 
-### fn char Buffer.get_char(&self)
+### fn char! Buffer.get_char(&self)
 
     returns the character at the cursor index, advances cursor by 1.
+
+### fn char! Buffer.peek_char_at(&self, usz index)
+
+    returns the character at index.
+    returns INDEX_OUT_OF_RANGE, NULL_BUFFER errors
 
 ### fn String Buffer.get_line(&self, bool entire_line = true)
 
