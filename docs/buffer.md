@@ -15,7 +15,25 @@
 
 ## fn Buffer Buffer.temp_init(&self, usz capacity = DEFAULT_CAPACITY)
 
+ calls new_init with temp allocator.
  @require !self.data() "Buffer already initialized"
+
+## fn Buffer new(usz capacity = DEFAULT_CAPACITY, Allocator allocator = allocator::heap())
+
+ function call for new object
+
+## fn Buffer temp_new(usz capacity = DEFAULT_CAPACITY) => new(capacity, allocator::temp()) @inline;
+
+ function call for new temp object
+
+## fn Buffer new_file(String filepath, Allocator allocator = allocator::heap())
+
+ will attempt to create a new buffer object and load the contents of filepath.
+ if the file does not exits, an empty buffer is created with the filepath and default capacity.
+
+## fn Buffer temp_file(String filepath) => new_file (filepath, allocator::temp() ) @inline;
+
+ same as new_file, using the temp allocator
 
 ## fn void Buffer.chop(self, usz new_size)
 

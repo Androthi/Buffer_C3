@@ -61,6 +61,7 @@ fn Buffer Buffer.new_init(&self, usz capacity = DEFAULT_CAPACITY, Allocator allo
 }
 
 <*
+ calls new_init with temp allocator.
  @require !self.data() "Buffer already initialized"
 *>
 fn Buffer Buffer.temp_init(&self, usz capacity = DEFAULT_CAPACITY)
@@ -69,29 +70,40 @@ fn Buffer Buffer.temp_init(&self, usz capacity = DEFAULT_CAPACITY)
 	return *self;
 }
 
+<*
+ function call for new object
+*>
 fn Buffer new(usz capacity = DEFAULT_CAPACITY, Allocator allocator = allocator::heap())
 {
 	return Buffer{}.new_init(capacity, allocator);
 }
 
+<*
+ function call for new temp object
+*>
 fn Buffer temp_new(usz capacity = DEFAULT_CAPACITY) => new(capacity, allocator::temp()) @inline;
 
-fn Buffer new_file(String filepath)
+<*
+ will attempt to create a new buffer object and load the contents of filepath.
+ if the file does not exits, an empty buffer is created with the filepath and default capacity.
+*>
+fn Buffer new_file(String filepath, Allocator allocator = allocator::heap())
 {
 	usz len = file::get_size(filepath) ?? DEFAULT_CAPACITY;
-	Buffer buf = Buffer{}.new_init(len, allocator::heap());
+	Buffer buf = Buffer{}.new_init(len, allocator);
 	buf.open_file(filepath);
 	return buf;
 }
 
-fn Buffer temp_file(String filepath)
-{
-	usz len = file::get_size(filepath) ?? DEFAULT_CAPACITY;
-	Buffer buf = Buffer{}.new_init(len, allocator::temp());
-	buf.open_file(filepath);
-	return buf;
-}
+<*
+ same as new_file, using the temp allocator
+*>
+fn Buffer temp_file(String filepath) => new_file (filepath, allocator::temp() ) @inline;
 
+<*
+ sets a new internal filepath for this object.
+ this is the file created with the save() method.
+*>
 fn void Buffer.set_filepath(&self, String filepath)
 {
 	if (!*self) *self = new();
@@ -99,7 +111,12 @@ fn void Buffer.set_filepath(&self, String filepath)
 	data.filepath = filepath;
 }
 
-//	NOTE: use append_file or insert_file if it is desired to preserve current buffer contents
+<*
+ tries to open the file filepath and load it into the buffer.
+ filepath is set as the internal filename for the buffer.
+ this will replace existing content in the buffer.
+ use append_file() to keep the contents of the buffer.
+*>
 fn void Buffer.open_file(&self, String filepath)
 {
 	usz len = file::get_size(filepath) ?? 0;
@@ -112,14 +129,19 @@ fn void Buffer.open_file(&self, String filepath)
 	data.filepath = filepath;
 }
 
-// append_file doesn't change the filepath unless it's empty
-
+<*
+ will try to open filepath and append it at the end of the buffer.
+ this macro is a wrapper around insert_file method.
+*>
 macro void Buffer.append_file(&self, String filepath)
 {
 	self.insert_file(self.len(), filepath);
 }
 
-// insert at index, or at eof
+<*
+ tries to insert a file at the given index.
+ if tere is no filepath specified for the buffer, sets filepath as the buffer's filepath.
+*>
 fn void Buffer.insert_file(&self, usz index, String filepath)
 {
 	if (!filepath) return;
@@ -134,6 +156,9 @@ fn void Buffer.insert_file(&self, usz index, String filepath)
 	data.len += file::load_buffer(filepath, data.chars[index:file_len]).len ?? 0;
 }
 
+<*
+ free memory of buffer
+*>
 fn void Buffer.free(&self)
 {
 	if (!*self) return;
@@ -143,6 +168,9 @@ fn void Buffer.free(&self)
 	*self = (Buffer)null;
 }
 
+<*
+ private method to reserve addition amount of bytes in the buffer memory.
+*>
 fn void Buffer.reserve(&self, usz addition) @private
 {
 	BufferData* data = self.data();
@@ -161,6 +189,12 @@ fn void Buffer.reserve(&self, usz addition) @private
 }
 
 // NOTE important: adjust data.len *after* calling adjust_for_insert
+// TODO: modify data.len here, need to fix every method that calls this
+// so that data.len isn't adjusted twice.
+<*
+ private helper metod for creating a len amount of space at index for
+ inserting new data.
+*>
 fn void Buffer.adjust_for_insert(&self, usz index, usz len) @private
 {
 	BufferData* data = self.data();
@@ -171,6 +205,11 @@ fn void Buffer.adjust_for_insert(&self, usz index, usz len) @private
 
 //+ File saving methods =======================================================
 
+<*
+ saves te contents of the buffer to a file using the internal buffer filepath.
+ returns error if there is no internal filepath set.
+ returns NULL_BUFFER, SAVE_FAILED and NO_FILENAME errors.
+*>
 fn void! Buffer.save(&self)
 {
 	BufferData* data = self.data();
@@ -179,6 +218,12 @@ fn void! Buffer.save(&self)
 	if ( catch error = file::save(data.filepath, data.chars[0:data.len])) return BufferError.SAVE_FAILED?;
 }
 
+<*
+ saves te contents of the buffer to a file using filepath.
+ the internal buffer filepath name is set to filepath.
+ returns error if there is no internal filepath set.
+ returns NULL_BUFFER, SAVE_FAILED and NO_FILENAM errors.
+*>
 fn void! Buffer.save_as(&self, String filepath)
 {
 	BufferData*data = self.data();
