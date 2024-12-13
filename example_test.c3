@@ -1,4 +1,4 @@
-module buffer_test;
+module test_buffer;
 import buffer;
 import std::io;
 import std::io::path;
@@ -47,13 +47,14 @@ fn bool! walker(Path p, bool is_dir, void*)
 				return true;
 			}
 			module_name = module_name.strip_end(";");
-			io::printfn("Got module name :%s", module_name);
+
 			// see if it's already in list
 			Buffer cur_module;
 			if (!buflist.has_key(module_name))
 			{
 				cur_module = buffer::new();
 				cur_module.appendf ("# %s\n", module_name);
+				Buffer tbuf = buflist.set_value_return( module_name, cur_module );
 				buflist.set(module_name, cur_module);
 			} else
 			{
@@ -83,9 +84,9 @@ fn bool! walker(Path p, bool is_dir, void*)
 				String! fn_def = cur_buf.get_line();
 				if (try fn_def){
 					// if fn_def is module, this is top level doc
+					io::printfn("found def :%s", fn_def);
 					if (fn_def.starts_with("module"))
 					{
-						io::printn("top level");
 						usz save_cursor = cur_module.get_cursor();
 						cur_module.cursor_to_bof();
 						usz inx = cur_module.cursor_right_lines(2);
@@ -99,6 +100,11 @@ fn bool! walker(Path p, bool is_dir, void*)
 						cur_module.append_buffer(sec);
 						cur_module.append("\n\n");
 					}
+
+					// inserting into cur_module potentially resized it and changed the pointer,
+					// set it into the map again to update the pointer.
+					buflist.set (module_name, cur_module);
+
 				} else
 				{
 					io::printn("Error: unable to get function or macro definition");
@@ -122,7 +128,7 @@ fn int main(String[] args)
 	Path! path = path::temp_cwd();
 	io::printfn("Working on project folder :%s", path.path_string)!!;
 	(void)path.walk(&walker, null);
-
+	io::printn("after walk");
 
 	// save the files to /doc folder
 	DString work = dstring::temp_new();
@@ -138,6 +144,7 @@ fn int main(String[] args)
 		work.delete_range(0, 6); // remove "module" from name
 		work.insert_at (0, doc_folder);
 		work.append (".md");
+		io::printfn("saving as :%s", work.str_view());
 		value.save_as (work.str_view())!!;
 	};
 	return 0;
