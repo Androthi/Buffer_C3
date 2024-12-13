@@ -1,21 +1,36 @@
 module buffer;
 import std::io;
 
+<*
+ @return `index of cursor`
+*>
 macro usz Buffer.get_cursor(self)
 {
 	return self.data().cursor;
 }
 
+<*
+ move cursor to end of buffer
+ @return `index of cursor`
+*>
 macro usz Buffer.cursor_to_eof(&self)
 {
 	self.cursor_to(self.len());
 }
 
+<*
+ move cursor to beginning of buffer
+ @return `index of cursor`
+*>
 macro usz Buffer.cursor_to_bof(&self)
 {
 	return self.cursor_to(0);
 }
 
+<*
+ @param index `position to try moving cursor`
+ @return `index of cursor`
+*>
 fn usz Buffer.cursor_to(&self, usz index)
 {
 	if (!*self) return 0;
@@ -25,6 +40,11 @@ fn usz Buffer.cursor_to(&self, usz index)
 	return data.cursor;
 }
 
+<*
+ try to move cursor right (towards end of buffer)
+ @param n `number of characters to move`
+ @return `index of cursor`
+*>
 fn usz Buffer.cursor_right(&self, usz n)
 {
 	if (!*self) return 0;
@@ -33,6 +53,11 @@ fn usz Buffer.cursor_right(&self, usz n)
 	return data.cursor;
 }
 
+<*
+ try to move cursor left (towards beginning of buffer)
+ @param n `number of characters to move`
+ @return `index of cursor`
+*>
 fn usz Buffer.cursor_left(&self, usz n)
 {
 	if (!*self) return 0;
@@ -41,6 +66,11 @@ fn usz Buffer.cursor_left(&self, usz n)
 	return data.cursor;
 }
 
+<*
+ tries to move cursor right (towards end of buffer) num_lines number of lines.
+ @param num_lines `number of lines to move`
+ @return `index of cursor`
+*>
 fn usz Buffer.cursor_right_lines(&self, usz num_lines)
 {
 	if (!*self) return 0;
@@ -55,7 +85,10 @@ fn usz Buffer.cursor_right_lines(&self, usz num_lines)
 	return data.cursor;
 }
 
-// returns index, maybe optional return with errors.
+<*
+ move cursor to beginning of current line
+ @return `index of cursor`
+*>
 fn usz Buffer.cursor_to_bol(&self)
 {
 	if (!*self) return 0;
@@ -79,6 +112,10 @@ fn usz Buffer.cursor_to_bol(&self)
 	return ++data.cursor;
 }
 
+<*
+ moves the internal cursor to the the end of the current line
+ @return `index of cursor`
+*>
 fn usz Buffer.cursor_to_eol(&self)
 {
 	if (!*self) return 0;
@@ -92,6 +129,10 @@ fn usz Buffer.cursor_to_eol(&self)
 	return data.cursor;
 }
 
+<*
+ moves the internal cursor to the next character that is not a member of set.
+ @return `index of cursor`
+*>
 fn usz Buffer.span(&self, Cset set = WHITE_SPACES)
 {
 	if (!*self) return 0;
@@ -104,6 +145,26 @@ fn usz Buffer.span(&self, Cset set = WHITE_SPACES)
 	return data.cursor;
 }
 
+<*
+ moves the internal cursor to the previous character that is not a member of set.
+ @return `index of cursor`
+*>
+fn usz Buffer.r_span(&self, Cset set = WHITE_SPACES)
+{
+	if (!*self) return 0;
+	BufferData* data = self.data();
+	while (data.cursor > 0)
+	{
+		if (!char_in_cset(data.chars[data.cursor], set)) break;
+		data.cursor--;
+	}
+	return data.cursor;
+}
+
+<*
+ moves the internal cursor to the next character that is a member of set.
+ @return `index of cursor`
+*>
 fn usz Buffer.brk(&self, Cset set = WHITE_SPACES)
 {
 	if (!*self) return 0;
@@ -116,8 +177,27 @@ fn usz Buffer.brk(&self, Cset set = WHITE_SPACES)
 	return data.cursor;	
 }
 
-//= NOTE: these will likely get their own files later
+<*
+ moves the internal cursor to the previous character that is a member of set.
+ @return `index of cursor`
+*>
+fn usz Buffer.r_brk(&self, Cset set = WHITE_SPACES)
+{
+	if (!*self) return 0;
+	BufferData* data = self.data();
+	while (data.cursor > data.len)
+	{
+		if (char_in_cset(data.chars[data.cursor], set)) break;
+		data.cursor--;
+	}
+	return data.cursor;	
+}
 
+//= NOTE: these will likely get their own files later
+<*
+ @return! BufferError.NULL_BUFFER, BufferError.EOF
+ @return `character at cursor index in buffer. cursor is advanced by 1`
+*>
 fn char! Buffer.get_char(&self)
 {
 	if (!*self) return BufferError.NULL_BUFFER?;
@@ -126,6 +206,10 @@ fn char! Buffer.get_char(&self)
 	return data.chars[data.cursor++];
 }
 
+<*
+ @return! BufferError.NULL_BUFFER, BufferError.INDEX_OUT_OF_RANGE
+ @return `character at cursor index in buffer.`
+*>
 fn char! Buffer.peek_char_at(&self, usz index)
 {
 	if (!*self) return BufferError.NULL_BUFFER?;
@@ -134,6 +218,11 @@ fn char! Buffer.peek_char_at(&self, usz index)
 	return data.chars[index];
 }
 
+<*
+ @param entire_line `if true, finds the beginning and end of line at cursor, if false, beginning of line is starting cursor index`
+ @return! BufferError.NULL_BUFFER, BufferError.EOF
+ @return `string slice of entire line at cursor index, cursor is advanced to end of current line`
+*>
 fn String! Buffer.get_line(&self, bool entire_line = true)
 {
 	if (!*self) return BufferError.NULL_BUFFER?;
@@ -146,11 +235,20 @@ fn String! Buffer.get_line(&self, bool entire_line = true)
 	return (String)data.chars[start:end-start];
 }
 
+<*
+ wrapper for get_line with parameter for entire_line set to false.
+*>
 macro String! Buffer.get_cursor_line(&self)
 {
 	return self.get_line(false)!;
 }
 
+<*
+ cursor independent method to get the string slice of a line
+ @param start `index that determines beginning of line to retreive`
+ @return! BufferError.NULL_BUFFER, BufferError.EOF
+ @return `string slice of line starting at start`
+*>
 fn String! Buffer.get_line_from(&self, usz start)
 {
 	if (!*self) return BufferError.NULL_BUFFER?;
@@ -165,6 +263,12 @@ fn String! Buffer.get_line_from(&self, usz start)
 	return (String)data.chars[start:end-start];
 }
 
+<*
+ @param needle `string to search`
+ @param case_sensitive `search is case_sensitive if true`
+ @return! BufferError.NULL_BUFFER, BufferError.EOF
+ @return `index in buffer where needle is found, cursor is advanced to end of found data`
+*>
 fn usz! Buffer.find_next(&self, String needle, bool case_sensitive = true)
 {
 	if (!*self) return BufferError.NULL_BUFFER?;
@@ -178,11 +282,21 @@ fn usz! Buffer.find_next(&self, String needle, bool case_sensitive = true)
 	}
 }
 
+<*
+ wrapper around find_next with case_sensitive set to false
+*>
 macro usz! Buffer.ifind_next(&self, String needle)
 {
 	self.find_next(needle, true);
 }
 
+<*
+ @param needle `the string to search for in the buffer`
+ @param start_from `the index in buffer from which to begin searching`
+ @param case_sensitive `if true, search is case sensitive, default true`
+ @return! BufferError.NULL_BUFFER, BufferError.EOF
+ @return `index if needle is found in buffer`
+*>
 fn usz! Buffer.find(&self, String needle, usz start_from = 0, bool case_sensitive = true)
 {
 	if (!*self) return BufferError.NULL_BUFFER?;
@@ -218,6 +332,9 @@ fn usz! Buffer.find(&self, String needle, usz start_from = 0, bool case_sensitiv
 	return BufferError.EOF?;
 }
 
+<*
+ wrapper around find method with case sensitive set to false
+*>
 macro usz! Buffer.ifind(&self, String needle, usz start_from = 0)
 {
 	self.find(needle, start_from, false);

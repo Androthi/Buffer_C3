@@ -234,29 +234,45 @@ fn void! Buffer.save_as(&self, String filepath)
 
 //+ Info/View/Maintenence methods =============================================
 
+<*
+ private method
+ @return `a pointer to the buffer data`
+*>
 fn BufferData* Buffer.data(self) @inline @private
 {
 	return (BufferData*)self;
 }
 
+<*
+ @return `the capacity of buffer`
+*>
 fn usz Buffer.capacity(self)
 {
 	if (!self) return 0;
 	return self.data().capacity;
 }
 
+<*
+ @return `the filepath that is set for this buffer`
+*>
 fn String Buffer.get_filepath(self)
 {
 	BufferData* data = self.data();
 	return self.data().filepath;
 }
 
+<*
+ @return `the length of buffer`
+*>
 fn usz Buffer.len(&self) @dynamic
 {
 	if (!*self) return 0;
 	return self.data().len;
 }
 
+<*
+ @return `a string slice of buffer contents`
+*>
 fn String Buffer.str_view(self)
 {
 	BufferData* data = self.data();
@@ -264,6 +280,9 @@ fn String Buffer.str_view(self)
 	return (String)data.chars[:data.len];
 }
 
+<*
+ @return `a zstring pointer of buffer contents. buffer is modified with a 0 at the end`
+*>
 fn ZString Buffer.zstr_view(&self)
 {
 	BufferData* data = self.data();
@@ -281,6 +300,9 @@ fn ZString Buffer.zstr_view(&self)
 	return (ZString)&data.chars[0];
 }
 
+<*
+ clears the contents of the buffer, does not reallocate memory.
+*>
 fn void Buffer.clear(self)
 {
 	if (!self) return;
