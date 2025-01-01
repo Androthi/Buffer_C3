@@ -4,6 +4,8 @@ import std::io;
 import std::io::path;
 import std::collections::map;
 
+distinct Other (Buffer) = void*;
+
 fn int main(String[] args)
 {
 
