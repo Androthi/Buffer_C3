@@ -9,7 +9,7 @@
     "targets": {
     "test_buffer": {
       "type": "executable",
-      "sources": [ "examples/**" ]
+      "sources": [ "examples/**" ],
     },
   },
   "cpu": "generic",
