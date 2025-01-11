@@ -85,18 +85,19 @@ A uft8 encoded string can be passed as data, but the characters will be treated 
 *>
 macro CSet make_ascii_cset ($data) @const
 {
-	uint128 $high;
 	uint128 $low;
 	$foreach ($x : $data)
 		$if $x > 127:
-			$high |= 1u128 << $x;
+			$error ("For ascii characters higher than 127, use the make_unicode_cset macro instead");
+			$error ("You can still use the char_in_cset method for testing any value in the range of 0 - 255");
+			return;
 		$else
 			$low |= 1u128 << $x;
 		$endif
 	$endforeach
 	return CSet{
 		.index = 0,
-		.data = { $low, $high, 0, 0 }
+		.data = { $low, 0, 0, 0 }
 	};
 }
 
@@ -121,7 +122,7 @@ Checks if an ascii char is in the character set.
 *>
 fn bool CSet.char_is_in_set (&self, char c)
 {
-	if (c > 127) return self.data[1] & ( 1u128 << c ) != 0;
+	if (c > 127) return self.data[1] & ( 1u128 << (c-128) ) != 0;
 	return self.data[0] & ( 1u128 << c ) != 0;
 }
 
