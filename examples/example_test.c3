@@ -20,10 +20,10 @@ fn int main(String[] args)
 	Buffer buf = buffer::new();
 	defer buf.free();
 
-	Buffer buf2 = buffer::new_file("test.txt");
+	Buffer buf2 = buffer::new_file("examples/test.txt");
 	buf2.append("\n==============================\n");
-	buf2.append_file("test.txt");
-	buf2.save_as("test2.txt")!!;
+	buf2.append_file("examples/test.txt");
+	buf2.save_as("examples/test2.txt")!!;
 	buf2.replace_chars('7', '#');
 
 	// io::printn("Testing insertf\n");
@@ -54,7 +54,7 @@ fn int main(String[] args)
 
 	// testing tokenizer
 	nbuf.clear();
-	nbuf.append_file("test3.txt");
+	nbuf.append_file("examples/test3.txt");
 	io::printn("===================================");
 	io::printn(nbuf.str_view());
 	io::printn("=============================");
