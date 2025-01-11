@@ -142,7 +142,7 @@ fn usz Buffer.cursor_to_eol(&self)
 	moves the internal cursor to the next character that is not a member of set.
 	@return `index of cursor`
 *>
-fn usz Buffer.span(&self, CSet* set = &cset::WHITE_SPACES)
+fn usz Buffer.span(&self, CSet* set = &cset::WHITE_SPACE)
 {
 	if (!*self) return 0;
 	BufferData* data = self.data();
@@ -158,7 +158,7 @@ fn usz Buffer.span(&self, CSet* set = &cset::WHITE_SPACES)
 	moves the internal cursor to the previous character that is not a member of set.
 	@return `index of cursor`
 *>
-fn usz Buffer.r_span(&self, CSet* set = &cset::WHITE_SPACES)
+fn usz Buffer.r_span(&self, CSet* set = &cset::WHITE_SPACE)
 {
 	if (!*self) return 0;
 	BufferData* data = self.data();
@@ -174,7 +174,7 @@ fn usz Buffer.r_span(&self, CSet* set = &cset::WHITE_SPACES)
 	moves the internal cursor to the next character that is a member of set.
 	@return `index of cursor`
 *>
-fn usz Buffer.brk(&self, CSet* set = &cset::WHITE_SPACES)
+fn usz Buffer.brk(&self, CSet* set = &cset::WHITE_SPACE)
 {
 	if (!*self) return 0;
 	BufferData* data = self.data();
@@ -190,7 +190,7 @@ fn usz Buffer.brk(&self, CSet* set = &cset::WHITE_SPACES)
 	moves the internal cursor to the previous character that is a member of set.
 	@return `index of cursor`
 *>
-fn usz Buffer.r_brk(&self, CSet* set = &cset::WHITE_SPACES)
+fn usz Buffer.r_brk(&self, CSet* set = &cset::WHITE_SPACE)
 {
 	if (!*self) return 0;
 	BufferData* data = self.data();
@@ -229,11 +229,11 @@ fn char! Buffer.peek_char_at(&self, usz index)
 
 <*
 	gets the word under the cursor
-	@param set `the character set to use to determine word separators, default WHITE_SPACES`
+	@param set `the character set to use to determine word separators, default WHITE_SPACE`
 	@return! BufferError.NULL_BUFFER, BufferError.EOF, BufferError.NO_WORD
 	@return `string slice containing the word`
 *>
-fn String! Buffer.get_word(&self, CSet* set = &cset::WHITE_SPACES)
+fn String! Buffer.get_word(&self, CSet* set = &cset::WHITE_SPACE)
 {
 	if (!*self) return BufferError.NULL_BUFFER?;
 	BufferData* data = self.data();
