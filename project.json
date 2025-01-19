@@ -3,7 +3,7 @@
     "warnings": [ "no-unused" ],
     "dependency-search-paths": [ "lib" ],
     "authors": [ "Sevag Krikorian <androth.pro@gmail.com>" ],
-    "version": "0.1.8",
+    "version": "0.1.9",
     "sources": [ "./lib/**" ],
     "output": "build",
     "targets": {
